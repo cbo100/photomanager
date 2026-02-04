@@ -118,7 +118,6 @@ PhotoManager/
 - **MetadataExtractor** - EXIF/IPTC/XMP metadata reading
 - **System.IO.Abstractions** - Testable file system operations
 - **xUnit + NSubstitute** - Testing
-- **AOT Ready** - Prepared for native AOT compilation
 
 ## Coming Soon (Phase 2 & 3)
 

@@ -7,7 +7,7 @@ This project has been configured for **.NET 10** with all the latest features en
 ✅ All projects updated to target `net10.0`  
 ✅ `global.json` configured to require .NET 10 SDK  
 ✅ `Directory.Build.props` added with .NET 10 optimizations  
-✅ AOT-compatible configuration enabled  
+❌ AOT disabled - Spectre.Console.Cli is not AOT-compatible  
 ✅ Latest C# language features enabled  
 ✅ Performance optimizations enabled  
 
@@ -16,7 +16,6 @@ This project has been configured for **.NET 10** with all the latest features en
 ### Performance Features
 - **Tiered Compilation** - Faster startup and better steady-state performance
 - **Quick JIT** - Reduced startup time
-- **AOT Ready** - Projects marked as AOT-compatible for future native compilation
 
 ### Code Quality
 - **Latest C#** - Using the newest C# language features
@@ -72,29 +71,17 @@ If you need to build with .NET 9 temporarily:
 
 2. Change all `net10.0` to `net9.0` in .csproj files
 
-## Testing AOT Compatibility
-
-Once .NET 10 is installed, test AOT compilation:
-
-```bash
-# Publish with AOT
-dotnet publish src/PhotoManager.Cli/PhotoManager.Cli.csproj \
-  -c Release \
-  -r linux-x64 \
-  -p:PublishAot=true
-
-# Test the native binary
-./src/PhotoManager.Cli/bin/Release/net10.0/linux-x64/publish/PhotoManager.Cli
-```
-
 ## Benefits of .NET 10
 
 - **Better Performance** - Up to 20% faster than .NET 9
-- **Smaller Binaries** - With AOT enabled
 - **Lower Memory** - Improved GC and memory management
 - **New APIs** - Latest BCL improvements
 - **Better Diagnostics** - Enhanced debugging and profiling
+## AOT Compatibility Note
 
+**Native AOT is currently disabled** because Spectre.Console.Cli uses reflection and is not compatible with AOT compilation. If AOT is a requirement, consider switching to a different CLI framework like System.CommandLine or implementing a custom command parser.
+
+`IsAotCompatible` and `PublishAot` are set to `false` in the project configuration.
 ## Notes
 
 The project will **require .NET 10 SDK** to build once you pull these changes. The `global.json` file enforces this requirement to ensure everyone uses the same SDK version.

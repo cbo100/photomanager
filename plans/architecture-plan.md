@@ -189,11 +189,12 @@ public enum OperationType
 
 ### AOT Compatibility
 
-- ✅ Avoid heavy reflection (use source generators where possible)
-- ✅ Test with `PublishAot` and `EnableTrimming` flags
+- ❌ **Spectre.Console.Cli is not AOT-compatible** - Uses reflection for command routing
+- ✅ Avoid heavy reflection in business logic (use source generators where possible)
+- ✅ Test with `PublishAot` and `EnableTrimming` flags if switching CLI frameworks
 - ⚠️ MetadataExtractor and ImageSharp have some AOT limitations
   - May need trimming warnings configuration
-  - Test thoroughly with AOT compilation
+  - Test thoroughly with AOT compilation if using alternative CLI framework
 
 ### Performance Optimizations
 

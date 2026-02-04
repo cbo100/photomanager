@@ -9,9 +9,6 @@
     <TieredCompilation>true</TieredCompilation>
     <TieredCompilationQuickJit>true</TieredCompilationQuickJit>
     
-    <!-- AOT preparation -->
-    <IsAotCompatible>true</IsAotCompatible>
-    
     <!-- Enable analyzers -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AnalysisLevel>latest</AnalysisLevel>
