@@ -9,22 +9,19 @@ A CLI/TUI-based photo manager for organizing image files into a structured layou
 ### CLI/TUI Framework
 
 - **Spectre.Console** - Modern, feature-rich CLI/TUI with progress bars, tables, prompts, and interactive menus
-- **System.CommandLine** - Microsoft's official CLI parsing library (or Spectre.Console.Cli)
+- **Spectre.Console.Cli** - Built-in command-line parsing for Spectre.Console
 
 ### Image Metadata Extraction
-
 
 - **MetadataExtractor** - Robust library for reading EXIF, IPTC, XMP metadata from images
 - **SixLabors.ImageSharp** - Image processing, verification, and thumbnail generation if needed
 
 ### Geolocation (Optional)
 
-
 - **ReverseGeocoding.NET** or custom offline solution for GPS coordinates → location names
 - Consider embedded lightweight database for offline geocoding
 
 ### File Operations
-
 
 - Built-in `System.IO` with `System.IO.Abstractions` for testability
 
