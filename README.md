@@ -1,6 +1,11 @@
 # Photo Manager CLI/TUI
 
-A command-line photo organizer that automatically organizes your photos based on EXIF metadata, dates, and customizable patterns.
+A command-line photo organizer that automatically organizes your photos based on EXIF metadata, dates, and customizable patterns. Built with .NET 10 and optimized for performance.
+
+## Requirements
+
+- **.NET 10 SDK** or later
+- Linux, macOS, or Windows
 
 ## Features (Phase 1 - MVP)
 
@@ -107,11 +112,13 @@ PhotoManager/
 
 ## Technologies
 
-- **.NET 9.0** (ready for .NET 10)
+- **.NET 10.0** - Latest .NET release
+- **C# Latest** - Using latest C# language features
 - **Spectre.Console.Cli** - Modern CLI framework
 - **MetadataExtractor** - EXIF/IPTC/XMP metadata reading
 - **System.IO.Abstractions** - Testable file system operations
 - **xUnit + NSubstitute** - Testing
+- **AOT Ready** - Prepared for native AOT compilation
 
 ## Coming Soon (Phase 2 & 3)
 
