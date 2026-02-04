@@ -1,0 +1,50 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{89A9320D-2B08-488E-94C3-42295071A0F4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoManager.Cli", "src\PhotoManager.Cli\PhotoManager.Cli.csproj", "{C828292B-F2A7-442D-AD21-B14A22D12FF0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoManager.Domain", "src\PhotoManager.Domain\PhotoManager.Domain.csproj", "{7A57B05B-9B2E-43DE-A536-7ED2EF1D25BE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoManager.Core", "src\PhotoManager.Core\PhotoManager.Core.csproj", "{242D50EF-6E43-46F5-839A-EDAAF4BBC5B3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{219AA27E-0473-4475-B167-3C6E91D002A4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PhotoManager.Tests", "tests\PhotoManager.Tests\PhotoManager.Tests.csproj", "{98989EC4-AEB4-48DE-8E93-C7DCCE1B1217}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C828292B-F2A7-442D-AD21-B14A22D12FF0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C828292B-F2A7-442D-AD21-B14A22D12FF0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C828292B-F2A7-442D-AD21-B14A22D12FF0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C828292B-F2A7-442D-AD21-B14A22D12FF0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A57B05B-9B2E-43DE-A536-7ED2EF1D25BE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A57B05B-9B2E-43DE-A536-7ED2EF1D25BE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A57B05B-9B2E-43DE-A536-7ED2EF1D25BE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A57B05B-9B2E-43DE-A536-7ED2EF1D25BE}.Release|Any CPU.Build.0 = Release|Any CPU
+		{242D50EF-6E43-46F5-839A-EDAAF4BBC5B3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{242D50EF-6E43-46F5-839A-EDAAF4BBC5B3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{242D50EF-6E43-46F5-839A-EDAAF4BBC5B3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{242D50EF-6E43-46F5-839A-EDAAF4BBC5B3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98989EC4-AEB4-48DE-8E93-C7DCCE1B1217}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98989EC4-AEB4-48DE-8E93-C7DCCE1B1217}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98989EC4-AEB4-48DE-8E93-C7DCCE1B1217}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98989EC4-AEB4-48DE-8E93-C7DCCE1B1217}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{C828292B-F2A7-442D-AD21-B14A22D12FF0} = {89A9320D-2B08-488E-94C3-42295071A0F4}
+		{7A57B05B-9B2E-43DE-A536-7ED2EF1D25BE} = {89A9320D-2B08-488E-94C3-42295071A0F4}
+		{242D50EF-6E43-46F5-839A-EDAAF4BBC5B3} = {89A9320D-2B08-488E-94C3-42295071A0F4}
+		{98989EC4-AEB4-48DE-8E93-C7DCCE1B1217} = {219AA27E-0473-4475-B167-3C6E91D002A4}
+	EndGlobalSection
+EndGlobal
