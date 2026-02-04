@@ -1,4 +1,3 @@
-using FluentAssertions;
 using PhotoManager.Domain;
 
 namespace PhotoManager.Tests;
@@ -17,9 +16,9 @@ public class PhotoMetadataTests
         };
 
         // Assert
-        metadata.SourcePath.Should().Be("/path/to/photo.jpg");
-        metadata.Hash.Should().Be("ABC123");
-        metadata.FileName.Should().Be("photo.jpg");
+        Assert.Equal("/path/to/photo.jpg", metadata.SourcePath);
+        Assert.Equal("ABC123", metadata.Hash);
+        Assert.Equal("photo.jpg", metadata.FileName);
     }
 
     [Fact]
@@ -29,7 +28,7 @@ public class PhotoMetadataTests
         var coordinates = new GpsCoordinates(40.7128, -74.0060);
 
         // Assert
-        coordinates.Latitude.Should().Be(40.7128);
-        coordinates.Longitude.Should().Be(-74.0060);
+        Assert.Equal(40.7128, coordinates.Latitude);
+        Assert.Equal(-74.0060, coordinates.Longitude);
     }
 }

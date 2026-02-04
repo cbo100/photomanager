@@ -111,7 +111,7 @@ PhotoManager/
 - **Spectre.Console.Cli** - Modern CLI framework
 - **MetadataExtractor** - EXIF/IPTC/XMP metadata reading
 - **System.IO.Abstractions** - Testable file system operations
-- **xUnit + FluentAssertions + NSubstitute** - Testing
+- **xUnit + NSubstitute** - Testing
 
 ## Coming Soon (Phase 2 & 3)
 
