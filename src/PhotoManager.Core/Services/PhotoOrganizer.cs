@@ -102,7 +102,7 @@ public partial class PhotoOrganizer : IPhotoOrganizer
         pattern = MonthNameRegex().Replace(pattern, dateTaken.ToString("MMMM"));
         pattern = DayRegex().Replace(pattern, dateTaken.Day.ToString("D2"));
 
-        if (photo.Location != null && config.UseLocation)
+        if (photo.Location != null)
         {
             // For now, use coordinates as placeholder
             // In future, implement reverse geocoding
