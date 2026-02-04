@@ -1,28 +1,36 @@
 # Photo Manager CLI/TUI - Architecture Plan
 
 ## Overview
+
 A CLI/TUI-based photo manager for organizing image files into a structured layout based on date, location, and events. Built with C# / .NET 10, compiled as self-contained and AOT-compatible.
 
 ## Core Libraries
 
 ### CLI/TUI Framework
+
 - **Spectre.Console** - Modern, feature-rich CLI/TUI with progress bars, tables, prompts, and interactive menus
 - **System.CommandLine** - Microsoft's official CLI parsing library (or Spectre.Console.Cli)
 
 ### Image Metadata Extraction
+
+
 - **MetadataExtractor** - Robust library for reading EXIF, IPTC, XMP metadata from images
 - **SixLabors.ImageSharp** - Image processing, verification, and thumbnail generation if needed
 
 ### Geolocation (Optional)
+
+
 - **ReverseGeocoding.NET** or custom offline solution for GPS coordinates → location names
 - Consider embedded lightweight database for offline geocoding
 
 ### File Operations
+
+
 - Built-in `System.IO` with `System.IO.Abstractions` for testability
 
 ## Project Architecture
 
-```
+```text
 PhotoManager/
 ├── PhotoManager.Cli/          # Entry point, CLI commands
 ├── PhotoManager.Core/         # Business logic, services
@@ -78,7 +86,8 @@ public enum OperationType
 ## Organization Strategies
 
 ### 1. Date-Based Organization
-```
+
+```text
 /organized/
   2024/
     01-January/
@@ -89,7 +98,8 @@ public enum OperationType
 ```
 
 ### 2. Location-Based
-```
+
+```text
 /organized/
   Europe/
     Italy/
@@ -98,7 +108,8 @@ public enum OperationType
 ```
 
 ### 3. Hybrid (Date + Location)
-```
+
+```text
 /organized/
   2024/
     2024-01-Italy-Rome/
@@ -108,9 +119,11 @@ public enum OperationType
 ```
 
 ### 4. Event-Based
+
 - Manual tagging via interactive TUI
 - Auto-clustering by date proximity (photos within 3 hours = same event)
-```
+
+```text
 /organized/
   2024-01-Rome-Trip/
     2024-01-15_IMG001.jpg
@@ -121,6 +134,7 @@ public enum OperationType
 ## Core Features
 
 ### Phase 1 - MVP
+
 1. **Scan source folder** recursively for image files
 2. **Extract EXIF metadata** (date taken, location, camera info)
 3. **Detect duplicates** via hash comparison
@@ -129,6 +143,7 @@ public enum OperationType
 6. **Progress visualization** with Spectre.Console
 
 ### Phase 2 - Advanced
+
 1. **Interactive event tagging** via TUI
 2. **Reverse geocoding** for GPS coordinates → location names
 3. **Conflict resolution** for filename collisions
@@ -137,6 +152,7 @@ public enum OperationType
 6. **Statistics and reports** (total photos, by date, by camera, etc.)
 
 ### Phase 3 - Polish
+
 1. **Smart event detection** using date/time clustering
 2. **Perceptual hashing** for finding similar images
 3. **Batch renaming** with custom patterns
@@ -175,6 +191,7 @@ public enum OperationType
 ## Technical Considerations
 
 ### AOT Compatibility
+
 - ✅ Avoid heavy reflection (use source generators where possible)
 - ✅ Test with `PublishAot` and `EnableTrimming` flags
 - ⚠️ MetadataExtractor and ImageSharp have some AOT limitations
@@ -182,18 +199,21 @@ public enum OperationType
   - Test thoroughly with AOT compilation
 
 ### Performance Optimizations
+
 - **Parallel processing** for metadata extraction (use `Parallel.ForEachAsync`)
 - **Incremental hashing** for large files (streaming)
 - **Memory-efficient** file operations (avoid loading entire files into memory)
 - **Progress reporting** without blocking main thread
 
 ### Data Integrity
+
 - ✅ No embedded databases in photo directories
 - ✅ All metadata processed in-memory during operation
 - ✅ Optional operation log in separate `.photomanager` folder
 - ✅ No modification of original files (metadata stored externally if needed)
 
 ### Duplicate Detection
+
 - **SHA256 hashing** for exact duplicates
 - **Optional perceptual hashing** (pHash) for similar images
 - **Comparison strategy**: Hash → file size → byte-by-byte if needed
@@ -247,30 +267,35 @@ photomanager events ~/Pictures/Organized
 ## Implementation Roadmap
 
 ### Milestone 1: Core Infrastructure (Week 1)
+
 - [ ] Set up .NET 10 project structure
 - [ ] Configure NuGet packages
 - [ ] Implement basic CLI with System.CommandLine
 - [ ] Set up unit testing framework
 
 ### Milestone 2: Metadata Extraction (Week 2)
+
 - [ ] Implement EXIF reader using MetadataExtractor
 - [ ] Extract date, location, camera info
 - [ ] Handle missing/corrupt metadata gracefully
 - [ ] Implement file hashing for duplicates
 
 ### Milestone 3: Organization Engine (Week 3)
+
 - [ ] Design organization pattern parser
 - [ ] Implement file operation planner
 - [ ] Create dry-run preview functionality
 - [ ] Implement copy/move/symlink operations
 
 ### Milestone 4: CLI/TUI (Week 4)
+
 - [ ] Integrate Spectre.Console for rich UI
 - [ ] Add progress bars and status updates
 - [ ] Implement interactive prompts
 - [ ] Create statistics dashboard
 
 ### Milestone 5: Polish & Testing (Week 5)
+
 - [ ] Comprehensive unit tests
 - [ ] Integration tests with sample photos
 - [ ] AOT compilation testing
