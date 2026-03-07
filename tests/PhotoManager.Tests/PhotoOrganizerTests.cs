@@ -274,4 +274,55 @@ public class PhotoOrganizerCollisionTests
         Assert.Contains(ops, op => op.DestinationPath.Contains("2023"));
         Assert.Contains(ops, op => op.DestinationPath.Contains("2024"));
     }
+
+    // 7. Secondary collision: photo.jpg (x2) + photo_1.jpg exists → should not create duplicate destinations
+    [Fact]
+    public void PlanOrganization_SecondaryCollision_NoDuplicateDestinations()
+    {
+        var organizer = new PhotoOrganizer(CreateFileSystem());
+        var date = new DateTime(2024, 6, 15);
+        // Three photos: two photo.jpg that would collide, plus one photo_1.jpg
+        // After renaming first collision: photo.jpg, photo_1.jpg, photo_1.jpg (COLLISION!)
+        // Correct behavior: photo.jpg, photo_2.jpg, photo_1.jpg (or similar safe assignment)
+        var photos = new List<PhotoMetadata>
+        {
+            new() { SourcePath = "/src/a/photo.jpg", Hash = "H1", FileName = "photo.jpg", DateTaken = date },
+            new() { SourcePath = "/src/b/photo.jpg", Hash = "H2", FileName = "photo.jpg", DateTaken = date },
+            new() { SourcePath = "/src/c/photo_1.jpg", Hash = "H3", FileName = "photo_1.jpg", DateTaken = date },
+        };
+
+        var ops = organizer.PlanOrganization(photos, RenameConfig());
+
+        Assert.Equal(3, ops.Count);
+        
+        // Verify no duplicate destinations
+        var destinations = ops.Select(o => o.DestinationPath).ToList();
+        Assert.Equal(destinations.Count, destinations.Distinct().Count());
+    }
+
+    // 8. Case-insensitive collision: Photo.jpg and photo.jpg should be treated as collision
+    [Fact]
+    public void PlanOrganization_CaseInsensitiveCollision_Rename_SecondGetsSuffix()
+    {
+        var organizer = new PhotoOrganizer(CreateFileSystem());
+        var date = new DateTime(2024, 6, 15);
+        // On Windows, Photo.jpg and photo.jpg would collide, so we must detect this
+        var photos = new List<PhotoMetadata>
+        {
+            new() { SourcePath = "/src/a/Photo.jpg", Hash = "H1", FileName = "Photo.jpg", DateTaken = date },
+            new() { SourcePath = "/src/b/photo.jpg", Hash = "H2", FileName = "photo.jpg", DateTaken = date },
+        };
+
+        var ops = organizer.PlanOrganization(photos, RenameConfig());
+
+        Assert.Equal(2, ops.Count);
+        
+        // Verify destinations differ (case-insensitively, one must have a suffix)
+        var destinations = ops.Select(o => o.DestinationPath).ToList();
+        Assert.Equal(2, destinations.Distinct(StringComparer.OrdinalIgnoreCase).Count());
+        
+        // One should keep name, other should get suffix
+        var hasSuffix = ops.Count(op => op.DestinationPath.Contains("_1"));
+        Assert.Equal(1, hasSuffix);
+    }
 }

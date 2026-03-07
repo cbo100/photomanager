@@ -35,30 +35,45 @@ public partial class PhotoOrganizer : IPhotoOrganizer
 
         // When renaming on collision, append numeric suffixes to all but the
         // first photo (sorted by source path for determinism) that share a
-        // destination path.
+        // destination path. Use case-insensitive comparison to handle Windows-style filesystems.
         if (config.HandleDuplicates == DuplicateHandling.Rename)
         {
-            var collisionGroups = operations
-                .GroupBy(op => op.DestinationPath)
-                .Where(g => g.Count() > 1)
-                .ToList();
-
+            var usedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var replacements = new Dictionary<PhotoOperation, PhotoOperation>();
 
-            foreach (var group in collisionGroups)
+            // Sort all operations by source path for deterministic ordering
+            var sortedOps = operations.OrderBy(op => op.SourcePath).ToList();
+
+            foreach (var op in sortedOps)
             {
-                var sorted = group.OrderBy(op => op.SourcePath).ToList();
-                for (int i = 1; i < sorted.Count; i++)
+                var candidatePath = op.DestinationPath;
+                
+                // If path is already used, find next available suffix
+                if (usedPaths.Contains(candidatePath))
                 {
-                    var op = sorted[i];
-                    var dir = _fileSystem.Path.GetDirectoryName(op.DestinationPath) ?? string.Empty;
-                    var nameWithoutExt = _fileSystem.Path.GetFileNameWithoutExtension(op.DestinationPath);
-                    var ext = _fileSystem.Path.GetExtension(op.DestinationPath);
-                    var newFileName = $"{nameWithoutExt}_{i}{ext}";
-                    replacements[op] = op with { DestinationPath = _fileSystem.Path.Combine(dir, newFileName) };
+                    var dir = _fileSystem.Path.GetDirectoryName(candidatePath) ?? string.Empty;
+                    var nameWithoutExt = _fileSystem.Path.GetFileNameWithoutExtension(candidatePath);
+                    var ext = _fileSystem.Path.GetExtension(candidatePath);
+                    
+                    int suffix = 1;
+                    string newPath;
+                    do
+                    {
+                        var newFileName = $"{nameWithoutExt}_{suffix}{ext}";
+                        newPath = _fileSystem.Path.Combine(dir, newFileName);
+                        suffix++;
+                    } while (usedPaths.Contains(newPath));
+                    
+                    replacements[op] = op with { DestinationPath = newPath };
+                    usedPaths.Add(newPath);
+                }
+                else
+                {
+                    usedPaths.Add(candidatePath);
                 }
             }
 
+            // Apply replacements
             for (int i = 0; i < operations.Count; i++)
             {
                 if (replacements.TryGetValue(operations[i], out var replacement))
