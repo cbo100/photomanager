@@ -18,18 +18,52 @@ public partial class PhotoOrganizer : IPhotoOrganizer
 
     public List<PhotoOperation> PlanOrganization(List<PhotoMetadata> photos, PhotoManagerConfig config)
     {
-        var operations = new List<PhotoOperation>();
+        // When skipping duplicates, deduplicate by hash before planning paths.
+        var sourcePhotos = config.HandleDuplicates == DuplicateHandling.Skip
+            ? photos.GroupBy(p => p.Hash).Select(g => g.First()).ToList()
+            : photos;
 
-        foreach (var photo in photos)
-        {
-            var destinationPath = GenerateDestinationPath(photo, config);
-            operations.Add(new PhotoOperation
+        var operations = sourcePhotos
+            .Select(photo => new PhotoOperation
             {
                 SourcePath = photo.SourcePath,
-                DestinationPath = destinationPath,
+                DestinationPath = GenerateDestinationPath(photo, config),
                 Type = config.OperationType,
                 Metadata = photo
-            });
+            })
+            .ToList();
+
+        // When renaming on collision, append numeric suffixes to all but the
+        // first photo (sorted by source path for determinism) that share a
+        // destination path.
+        if (config.HandleDuplicates == DuplicateHandling.Rename)
+        {
+            var collisionGroups = operations
+                .GroupBy(op => op.DestinationPath)
+                .Where(g => g.Count() > 1)
+                .ToList();
+
+            var replacements = new Dictionary<PhotoOperation, PhotoOperation>();
+
+            foreach (var group in collisionGroups)
+            {
+                var sorted = group.OrderBy(op => op.SourcePath).ToList();
+                for (int i = 1; i < sorted.Count; i++)
+                {
+                    var op = sorted[i];
+                    var dir = _fileSystem.Path.GetDirectoryName(op.DestinationPath) ?? string.Empty;
+                    var nameWithoutExt = _fileSystem.Path.GetFileNameWithoutExtension(op.DestinationPath);
+                    var ext = _fileSystem.Path.GetExtension(op.DestinationPath);
+                    var newFileName = $"{nameWithoutExt}_{i}{ext}";
+                    replacements[op] = op with { DestinationPath = _fileSystem.Path.Combine(dir, newFileName) };
+                }
+            }
+
+            for (int i = 0; i < operations.Count; i++)
+            {
+                if (replacements.TryGetValue(operations[i], out var replacement))
+                    operations[i] = replacement;
+            }
         }
 
         return operations;
