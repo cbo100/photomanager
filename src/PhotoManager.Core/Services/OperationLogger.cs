@@ -34,7 +34,7 @@ public class OperationLogger : IOperationLogger
 
     public OperationLog AddEntry(OperationLog log, OperationLogEntry entry)
     {
-        return log with { Entries = new List<OperationLogEntry>(log.Entries) { entry } };
+        return log with { Entries = log.Entries.Append(entry).ToList() };
     }
 
     public async Task<string> SaveAsync(OperationLog log, string logDirectory, CancellationToken ct = default)

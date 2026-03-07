@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace PhotoManager.Domain;
 
 public record OperationLog
@@ -11,8 +13,16 @@ public record OperationLog
     public required string Mode { get; init; }
     public bool DryRun { get; init; }
     public List<OperationLogEntry> Entries { get; init; } = new();
+    
+    [JsonIgnore]
     public int TotalOperations => Entries.Count;
+    
+    [JsonIgnore]
     public int SuccessCount => Entries.Count(e => e.Success);
+    
+    [JsonIgnore]
     public int FailureCount => Entries.Count(e => !e.Success);
+    
+    [JsonIgnore]
     public long TotalBytesProcessed => Entries.Where(e => e.Success).Sum(e => e.FileSizeBytes);
 }

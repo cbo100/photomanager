@@ -200,4 +200,32 @@ public class OperationLoggerTests
 
         Assert.Equal(3000, log.TotalBytesProcessed);
     }
+
+    [Fact]
+    public void JsonRoundTrip_ComputedProperties_WorkCorrectly()
+    {
+        var fs = Substitute.For<IFileSystem>();
+        var logger = new OperationLogger(fs);
+        var log = logger.StartSession(MakeConfig(), isDryRun: false);
+
+        log = logger.AddEntry(log, new OperationLogEntry { SourcePath = "/1.jpg", DestinationPath = "/d/1.jpg", OperationType = "Copy", Success = true, Timestamp = DateTime.UtcNow, FileSizeBytes = 1000 });
+        log = logger.AddEntry(log, new OperationLogEntry { SourcePath = "/2.jpg", DestinationPath = "/d/2.jpg", OperationType = "Copy", Success = false, ErrorMessage = "Error", Timestamp = DateTime.UtcNow, FileSizeBytes = 2000 });
+
+        // Serialize and deserialize
+        var json = JsonSerializer.Serialize(log, JsonOptions);
+        var deserialized = JsonSerializer.Deserialize<OperationLog>(json, JsonOptions);
+
+        // Verify computed properties work after deserialization
+        Assert.NotNull(deserialized);
+        Assert.Equal(2, deserialized!.TotalOperations);
+        Assert.Equal(1, deserialized.SuccessCount);
+        Assert.Equal(1, deserialized.FailureCount);
+        Assert.Equal(1000, deserialized.TotalBytesProcessed);
+
+        // Verify computed properties are NOT in the JSON
+        Assert.DoesNotContain("totalOperations", json);
+        Assert.DoesNotContain("successCount", json);
+        Assert.DoesNotContain("failureCount", json);
+        Assert.DoesNotContain("totalBytesProcessed", json);
+    }
 }
