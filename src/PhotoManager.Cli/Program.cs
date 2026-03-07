@@ -17,6 +17,9 @@ app.Configure(config =>
 
     config.AddCommand<PreviewCommand>("preview")
         .WithDescription("Preview organization plan without executing");
+
+    config.AddCommand<StatsCommand>("stats")
+        .WithDescription("Display statistics and report for a photo collection");
 });
 
 return app.Run(args);
