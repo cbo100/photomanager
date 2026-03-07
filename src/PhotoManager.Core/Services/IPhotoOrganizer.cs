@@ -17,7 +17,7 @@ public interface IPhotoOrganizer
     /// <summary>
     /// Executes the planned operations
     /// </summary>
-    Task ExecuteOperationsAsync(
+    Task<IReadOnlyList<OperationResult>> ExecuteOperationsAsync(
         List<PhotoOperation> operations,
         IProgress<OperationProgress>? progress = null,
         CancellationToken cancellationToken = default);

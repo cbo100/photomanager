@@ -35,42 +35,60 @@ public partial class PhotoOrganizer : IPhotoOrganizer
         return operations;
     }
 
-    public async Task ExecuteOperationsAsync(
+    public async Task<IReadOnlyList<OperationResult>> ExecuteOperationsAsync(
         List<PhotoOperation> operations,
         IProgress<OperationProgress>? progress = null,
         CancellationToken cancellationToken = default)
     {
         var totalOperations = operations.Count;
         var completedCount = 0;
+        var results = new List<OperationResult>();
 
         foreach (var operation in operations)
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            var destinationDir = _fileSystem.Path.GetDirectoryName(operation.DestinationPath);
-            if (!string.IsNullOrEmpty(destinationDir) && !_fileSystem.Directory.Exists(destinationDir))
+            bool success;
+            string? errorMessage = null;
+
+            try
             {
-                _fileSystem.Directory.CreateDirectory(destinationDir);
+                var destinationDir = _fileSystem.Path.GetDirectoryName(operation.DestinationPath);
+                if (!string.IsNullOrEmpty(destinationDir) && !_fileSystem.Directory.Exists(destinationDir))
+                    _fileSystem.Directory.CreateDirectory(destinationDir);
+
+                switch (operation.Type)
+                {
+                    case OperationType.Copy:
+                        await CopyFileAsync(operation.SourcePath, operation.DestinationPath, cancellationToken);
+                        break;
+                    case OperationType.Move:
+                        _fileSystem.File.Move(operation.SourcePath, operation.DestinationPath);
+                        break;
+                    case OperationType.Symlink:
+                        _fileSystem.File.CreateSymbolicLink(operation.DestinationPath, operation.SourcePath);
+                        break;
+                }
+                success = true;
+            }
+            catch (Exception ex)
+            {
+                success = false;
+                errorMessage = ex.Message;
             }
 
-            switch (operation.Type)
+            results.Add(new OperationResult
             {
-                case OperationType.Copy:
-                    await CopyFileAsync(operation.SourcePath, operation.DestinationPath, cancellationToken);
-                    break;
-
-                case OperationType.Move:
-                    _fileSystem.File.Move(operation.SourcePath, operation.DestinationPath);
-                    break;
-
-                case OperationType.Symlink:
-                    _fileSystem.File.CreateSymbolicLink(operation.DestinationPath, operation.SourcePath);
-                    break;
-            }
+                Operation = operation,
+                Success = success,
+                ErrorMessage = errorMessage
+            });
 
             var completed = Interlocked.Increment(ref completedCount);
             progress?.Report(new OperationProgress(completed, totalOperations, operation.SourcePath));
         }
+
+        return results;
     }
 
     public Dictionary<string, List<PhotoMetadata>> DetectDuplicates(List<PhotoMetadata> photos)

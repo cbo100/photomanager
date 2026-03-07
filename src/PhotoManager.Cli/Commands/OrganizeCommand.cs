@@ -41,6 +41,10 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         [Description("File extensions to scan (comma-separated)")]
         [DefaultValue(".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef")]
         public string Extensions { get; init; } = ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef";
+
+        [CommandOption("--log-dir")]
+        [Description("Directory to write operation log (default: ~/.photomanager/logs)")]
+        public string? LogDir { get; set; }
     }
 
     public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
@@ -151,6 +155,8 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
 
         AnsiConsole.WriteLine();
 
+        IReadOnlyList<OperationResult> results = [];
+
         await AnsiConsole.Progress()
             .StartAsync(async ctx =>
             {
@@ -163,11 +169,43 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
                     task.Description = $"[green]Processing:[/] {Path.GetFileName(p.CurrentFile)}";
                 });
 
-                await organizer.ExecuteOperationsAsync(operations, progress);
+                results = await organizer.ExecuteOperationsAsync(operations, progress);
             });
 
         AnsiConsole.WriteLine();
-        AnsiConsole.MarkupLine($"[green]✓ Successfully organized {operations.Count} photos![/]");
+        var successCount = results.Count(r => r.Success);
+        var failureCount = results.Count(r => !r.Success);
+
+        AnsiConsole.MarkupLine($"[green]✓ Successfully organized {successCount} photos![/]");
+        if (failureCount > 0)
+            AnsiConsole.MarkupLine($"[red]✗ {failureCount} operations failed.[/]");
+
+        // Write operation log
+        var logDir = settings.LogDir ?? Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
+            ".photomanager", "logs");
+
+        var operationLogger = new OperationLogger(fileSystem);
+        var log = operationLogger.StartSession(config, settings.DryRun);
+
+        foreach (var result in results)
+        {
+            var entry = new OperationLogEntry
+            {
+                SourcePath = result.Operation.SourcePath,
+                DestinationPath = result.Operation.DestinationPath,
+                OperationType = result.Operation.Type.ToString(),
+                Success = result.Success,
+                ErrorMessage = result.ErrorMessage,
+                Timestamp = DateTime.UtcNow,
+                FileSizeBytes = result.Operation.Metadata?.FileSize ?? 0
+            };
+            log = operationLogger.AddEntry(log, entry);
+        }
+
+        log = log with { CompletedAt = DateTime.UtcNow };
+        var logPath = await operationLogger.SaveAsync(log, logDir);
+        AnsiConsole.MarkupLine($"[green]Operation log saved: {logPath}[/]");
 
         return 0;
     }
