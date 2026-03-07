@@ -18,18 +18,67 @@ public partial class PhotoOrganizer : IPhotoOrganizer
 
     public List<PhotoOperation> PlanOrganization(List<PhotoMetadata> photos, PhotoManagerConfig config)
     {
-        var operations = new List<PhotoOperation>();
+        // When skipping duplicates, deduplicate by hash before planning paths.
+        var sourcePhotos = config.HandleDuplicates == DuplicateHandling.Skip
+            ? photos.GroupBy(p => p.Hash).Select(g => g.First()).ToList()
+            : photos;
 
-        foreach (var photo in photos)
-        {
-            var destinationPath = GenerateDestinationPath(photo, config);
-            operations.Add(new PhotoOperation
+        var operations = sourcePhotos
+            .Select(photo => new PhotoOperation
             {
                 SourcePath = photo.SourcePath,
-                DestinationPath = destinationPath,
+                DestinationPath = GenerateDestinationPath(photo, config),
                 Type = config.OperationType,
                 Metadata = photo
-            });
+            })
+            .ToList();
+
+        // When renaming on collision, append numeric suffixes to all but the
+        // first photo (sorted by source path for determinism) that share a
+        // destination path. Use case-insensitive comparison to handle Windows-style filesystems.
+        if (config.HandleDuplicates == DuplicateHandling.Rename)
+        {
+            var usedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var replacements = new Dictionary<PhotoOperation, PhotoOperation>();
+
+            // Sort all operations by source path for deterministic ordering
+            var sortedOps = operations.OrderBy(op => op.SourcePath).ToList();
+
+            foreach (var op in sortedOps)
+            {
+                var candidatePath = op.DestinationPath;
+                
+                // If path is already used, find next available suffix
+                if (usedPaths.Contains(candidatePath))
+                {
+                    var dir = _fileSystem.Path.GetDirectoryName(candidatePath) ?? string.Empty;
+                    var nameWithoutExt = _fileSystem.Path.GetFileNameWithoutExtension(candidatePath);
+                    var ext = _fileSystem.Path.GetExtension(candidatePath);
+                    
+                    int suffix = 1;
+                    string newPath;
+                    do
+                    {
+                        var newFileName = $"{nameWithoutExt}_{suffix}{ext}";
+                        newPath = _fileSystem.Path.Combine(dir, newFileName);
+                        suffix++;
+                    } while (usedPaths.Contains(newPath));
+                    
+                    replacements[op] = op with { DestinationPath = newPath };
+                    usedPaths.Add(newPath);
+                }
+                else
+                {
+                    usedPaths.Add(candidatePath);
+                }
+            }
+
+            // Apply replacements
+            for (int i = 0; i < operations.Count; i++)
+            {
+                if (replacements.TryGetValue(operations[i], out var replacement))
+                    operations[i] = replacement;
+            }
         }
 
         return operations;
