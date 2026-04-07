@@ -26,6 +26,11 @@ public interface IPhotoOrganizer
     /// Detects duplicate photos by hash
     /// </summary>
     Dictionary<string, List<PhotoMetadata>> DetectDuplicates(List<PhotoMetadata> photos);
+
+    /// <summary>
+    /// Removes empty subdirectories within the given root folder (bottom-up). Returns the count removed.
+    /// </summary>
+    int CleanEmptyDirectories(string rootPath);
 }
 
 /// <summary>

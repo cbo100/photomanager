@@ -23,6 +23,10 @@ public partial class PhotoOrganizer : IPhotoOrganizer
         foreach (var photo in photos)
         {
             var destinationPath = GenerateDestinationPath(photo, config);
+
+            if (!config.OverwriteExisting && _fileSystem.File.Exists(destinationPath))
+                continue;
+
             operations.Add(new PhotoOperation
             {
                 SourcePath = photo.SourcePath,
@@ -79,6 +83,23 @@ public partial class PhotoOrganizer : IPhotoOrganizer
             .GroupBy(p => p.Hash)
             .Where(g => g.Count() > 1)
             .ToDictionary(g => g.Key, g => g.ToList());
+    }
+
+    public int CleanEmptyDirectories(string rootPath)
+    {
+        var removed = 0;
+
+        foreach (var dir in _fileSystem.Directory.EnumerateDirectories(rootPath, "*", SearchOption.AllDirectories)
+                     .OrderByDescending(d => d.Length))
+        {
+            if (!_fileSystem.Directory.EnumerateFileSystemEntries(dir).Any())
+            {
+                _fileSystem.Directory.Delete(dir);
+                removed++;
+            }
+        }
+
+        return removed;
     }
 
     private async Task CopyFileAsync(string sourcePath, string destinationPath, CancellationToken cancellationToken)

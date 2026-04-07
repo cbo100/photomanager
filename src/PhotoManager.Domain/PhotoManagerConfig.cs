@@ -15,6 +15,7 @@ public class PhotoManagerConfig
     public bool PreserveOriginalDate { get; set; } = true;
     public bool ParallelProcessing { get; set; } = true;
     public int MaxDegreeOfParallelism { get; set; } = 4;
+    public bool OverwriteExisting { get; set; } = false;
 }
 
 /// <summary>

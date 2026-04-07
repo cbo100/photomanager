@@ -15,9 +15,9 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         [Description("Source directory to scan")]
         public required string SourcePath { get; init; }
 
-        [CommandArgument(1, "<destination>")]
-        [Description("Destination directory for organized photos")]
-        public required string DestinationPath { get; init; }
+        [CommandArgument(1, "[destination]")]
+        [Description("Destination directory for organized photos (defaults to source for in-place organisation)")]
+        public string? DestinationPath { get; init; }
 
         [CommandOption("--pattern")]
         [Description("Organization pattern")]
@@ -45,6 +45,18 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         [CommandOption("-y|--yes")]
         [Description("Skip confirmation prompt and execute immediately")]
         public bool Yes { get; init; }
+
+        [CommandOption("--overwrite")]
+        [Description("Overwrite files that already exist at the destination")]
+        public bool Overwrite { get; init; }
+
+        public override ValidationResult Validate()
+        {
+            if (DestinationPath == null && Mode.ToLowerInvariant() != "move")
+                return ValidationResult.Error("A destination folder must be specified when using copy or symlink mode. Use --mode move for in-place organisation.");
+
+            return ValidationResult.Success();
+        }
     }
 
     public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
@@ -69,6 +81,8 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         };
 
         AnsiConsole.MarkupLine($"[green]Scanning directory:[/] {settings.SourcePath}");
+
+        var destination = settings.DestinationPath ?? settings.SourcePath;
 
         List<PhotoMetadata>? photos = null;
 
@@ -111,9 +125,10 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         var config = new PhotoManagerConfig
         {
             SourceFolder = settings.SourcePath,
-            DestinationFolder = settings.DestinationPath,
+            DestinationFolder = destination,
             OrganizationPattern = settings.Pattern,
-            OperationType = operationType
+            OperationType = operationType,
+            OverwriteExisting = settings.Overwrite
         };
 
         var operations = organizer.PlanOrganization(photos, config);
@@ -125,27 +140,17 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         {
             AnsiConsole.MarkupLine("[yellow]DRY RUN - No files will be modified[/]");
             AnsiConsole.WriteLine();
-
-            var table = new Table();
-            table.AddColumn("Source");
-            table.AddColumn("Destination");
-
-            foreach (var op in operations.Take(10))
-            {
-                table.AddRow(
-                    Path.GetFileName(op.SourcePath),
-                    op.DestinationPath.Replace(settings.DestinationPath, ""));
-            }
-
-            AnsiConsole.Write(table);
-
-            if (operations.Count > 10)
-            {
-                AnsiConsole.MarkupLine($"[dim]... and {operations.Count - 10} more operations[/]");
-            }
-
+            PrintPreview(operations, settings.SourcePath, destination);
             return 0;
         }
+
+        if (operations.Count == 0)
+        {
+            AnsiConsole.MarkupLine("[yellow]Nothing to do — all files already exist at the destination.[/]");
+            return 0;
+        }
+
+        PrintPreview(operations, settings.SourcePath, destination);
 
         if (!settings.Yes && !AnsiConsole.Confirm($"Execute {operations.Count} {settings.Mode} operations?"))
         {
@@ -173,6 +178,36 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         AnsiConsole.WriteLine();
         AnsiConsole.MarkupLine($"[green]✓ Successfully organized {operations.Count} photos![/]");
 
+        if (operationType == OperationType.Move)
+        {
+            var removed = organizer.CleanEmptyDirectories(settings.SourcePath);
+            if (removed > 0)
+                AnsiConsole.MarkupLine($"[dim]Removed {removed} empty director{(removed == 1 ? "y" : "ies")} from source.[/]");
+        }
+
         return 0;
+    }
+
+    private static void PrintPreview(List<PhotoOperation> operations, string source, string destination)
+    {
+        const int previewSize = 10;
+
+        var table = new Table();
+        table.AddColumn("Source");
+        table.AddColumn("Destination");
+
+        foreach (var op in operations.Take(previewSize))
+        {
+            table.AddRow(
+                Path.DirectorySeparatorChar + Path.GetRelativePath(source, op.SourcePath),
+                op.DestinationPath.Replace(destination, ""));
+        }
+
+        AnsiConsole.Write(table);
+
+        if (operations.Count > previewSize)
+            AnsiConsole.MarkupLine($"[dim]... and {operations.Count - previewSize} more operations[/]");
+
+        AnsiConsole.WriteLine();
     }
 }
