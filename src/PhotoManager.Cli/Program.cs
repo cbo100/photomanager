@@ -13,10 +13,9 @@ app.Configure(config =>
         .WithDescription("Scan a directory for photos and display metadata");
 
     config.AddCommand<OrganizeCommand>("organize")
+        .WithAlias("organise")
         .WithDescription("Organize photos from source to destination folder");
 
-    config.AddCommand<PreviewCommand>("preview")
-        .WithDescription("Preview organization plan without executing");
 });
 
 return app.Run(args);
