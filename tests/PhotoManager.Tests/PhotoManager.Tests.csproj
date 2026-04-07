@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\PhotoManager.Core\PhotoManager.Core.csproj" />
+    <ProjectReference Include="..\..\src\PhotoManager.Cli\PhotoManager.Cli.csproj" />
   </ItemGroup>
 
 </Project>

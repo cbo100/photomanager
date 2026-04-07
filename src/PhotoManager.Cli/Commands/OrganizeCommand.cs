@@ -41,6 +41,10 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         [Description("File extensions to scan (comma-separated)")]
         [DefaultValue(".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef")]
         public string Extensions { get; init; } = ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef";
+
+        [CommandOption("-y|--yes")]
+        [Description("Skip confirmation prompt and execute immediately")]
+        public bool Yes { get; init; }
     }
 
     public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
@@ -143,7 +147,7 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
             return 0;
         }
 
-        if (!AnsiConsole.Confirm($"Execute {operations.Count} {settings.Mode} operations?"))
+        if (!settings.Yes && !AnsiConsole.Confirm($"Execute {operations.Count} {settings.Mode} operations?"))
         {
             AnsiConsole.MarkupLine("[yellow]Operation cancelled[/]");
             return 0;
