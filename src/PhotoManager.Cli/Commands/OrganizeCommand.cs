@@ -70,6 +70,7 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
         var metadataExtractor = new MetadataExtractorService(fileSystem);
         var scanner = new PhotoScanner(fileSystem, metadataExtractor);
         var organizer = new PhotoOrganizer(fileSystem);
+        var geocoder = new GeoNamesGeocodingService(fileSystem);
 
         var extensions = settings.Extensions.Split(',', StringSplitOptions.RemoveEmptyEntries);
 
@@ -119,6 +120,32 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
                 var duplicateFiles = duplicates.SelectMany(d => d.Value.Skip(1)).ToList();
                 photos = photos.Except(duplicateFiles).ToList();
                 AnsiConsole.MarkupLine($"[yellow]Skipping {duplicateFiles.Count} duplicate files[/]");
+            }
+        }
+
+        // Resolve GPS coordinates to location names when {Location} pattern is used
+        if (settings.Pattern.Contains("{Location}", StringComparison.OrdinalIgnoreCase))
+        {
+            var photosWithLocation = photos.Where(p => p.Location != null).ToList();
+            if (photosWithLocation.Count > 0)
+            {
+                await AnsiConsole.Status()
+                    .StartAsync("Resolving locations...", async _ =>
+                    {
+                        await geocoder.EnsureDataAvailableAsync(cancellationToken);
+
+                        var resolved = new Dictionary<PhotoMetadata, PhotoMetadata>();
+                        foreach (var photo in photosWithLocation)
+                        {
+                            var name = await geocoder.ResolveAsync(photo.Location!, cancellationToken);
+                            if (name != null)
+                                resolved[photo] = photo with { LocationName = name };
+                        }
+
+                        photos = photos
+                            .Select(p => resolved.TryGetValue(p, out var r) ? r : p)
+                            .ToList();
+                    });
             }
         }
 

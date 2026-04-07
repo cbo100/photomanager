@@ -8,6 +8,7 @@ public record PhotoMetadata
     public required string SourcePath { get; init; }
     public DateTime? DateTaken { get; init; }
     public GpsCoordinates? Location { get; init; }
+    public string? LocationName { get; init; }
     public string? CameraMake { get; init; }
     public string? CameraModel { get; init; }
     public required string Hash { get; init; }

@@ -125,9 +125,8 @@ public partial class PhotoOrganizer : IPhotoOrganizer
 
         if (photo.Location != null)
         {
-            // For now, use coordinates as placeholder
-            // In future, implement reverse geocoding
-            var locationStr = $"{photo.Location.Latitude:F2}_{photo.Location.Longitude:F2}";
+            var locationStr = photo.LocationName
+                ?? $"{photo.Location.Latitude:F2}_{photo.Location.Longitude:F2}";
             pattern = LocationRegex().Replace(pattern, locationStr);
         }
         else
