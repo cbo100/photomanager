@@ -36,4 +36,3 @@
 - **Config file** — persist preferred pattern, mode, extensions etc. in `~/.photomanager/config.toml` so you don't repeat flags every run
 - **Shell completions** — generate bash/zsh/fish completion scripts
 - **Publish as a single-file tool** — `dotnet publish` as a self-contained native AOT binary for easy distribution
-
