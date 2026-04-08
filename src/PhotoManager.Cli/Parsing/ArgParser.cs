@@ -24,6 +24,9 @@ internal static class ArgParser
             GetOption(name) ?? defaultValue;
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     /// <param name="args">Arguments after the command name has been stripped.</param>
     /// <param name="flagNames">Names of boolean flags (short or long, without dashes) that never take a value.</param>
     public static Result Parse(string[] args, IReadOnlySet<string> flagNames)
