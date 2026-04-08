@@ -1,4 +1,4 @@
-﻿using System.IO.Abstractions;
+using System.IO.Abstractions;
 using PhotoManager.Cli.Commands;
 using PhotoManager.Core.Services;
 using Spectre.Console.Cli;

@@ -1,8 +1,8 @@
+using System.IO.Abstractions;
 using System.Security.Cryptography;
 using MetadataExtractor;
 using MetadataExtractor.Formats.Exif;
 using PhotoManager.Domain;
-using System.IO.Abstractions;
 
 namespace PhotoManager.Core.Services;
 

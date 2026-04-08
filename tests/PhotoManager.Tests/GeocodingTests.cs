@@ -1,7 +1,7 @@
 using System.IO.Abstractions;
+using NSubstitute;
 using PhotoManager.Core.Services;
 using PhotoManager.Domain;
-using NSubstitute;
 
 namespace PhotoManager.Tests;
 
@@ -55,7 +55,7 @@ public class GeocodingTests
         var dataPath = "/home/.photomanager/cities500.tsv";
         var lines = MakeTsvLines(
             ("Parramatta", -33.82, 151.00, "AU", 100_000),
-            ("Sydney",     -33.87, 151.03, "AU", 5_000_000)); // ~5km from query, larger population
+            ("Sydney", -33.87, 151.03, "AU", 5_000_000)); // ~5km from query, larger population
 
         var fileSystem = MakeFileSystem(dataPath, lines);
         var svc = new GeoNamesGeocodingService(fileSystem, "/home/.photomanager");

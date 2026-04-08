@@ -1,7 +1,7 @@
 using System.IO.Abstractions;
+using NSubstitute;
 using PhotoManager.Core.Services;
 using PhotoManager.Domain;
-using NSubstitute;
 
 namespace PhotoManager.Tests;
 
@@ -12,12 +12,12 @@ public class PhotoOrganizerTests
     {
         // Arrange
         var fileSystem = Substitute.For<IFileSystem>();
-        
+
         // Mock file system path operations
         fileSystem.Path.GetFileName(Arg.Any<string>()).Returns(callInfo => System.IO.Path.GetFileName(callInfo.Arg<string>()));
-        fileSystem.Path.Combine(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(callInfo => 
+        fileSystem.Path.Combine(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(callInfo =>
             System.IO.Path.Combine(callInfo.ArgAt<string>(0), callInfo.ArgAt<string>(1), callInfo.ArgAt<string>(2)));
-        
+
         var organizer = new PhotoOrganizer(fileSystem);
 
         var photos = new List<PhotoMetadata>
@@ -45,7 +45,7 @@ public class PhotoOrganizerTests
         // Assert
         Assert.Single(operations);
         var operation = operations[0];
-        
+
         // Should contain coordinates formatted as "lat_lon"
         Assert.Contains("-33.83", operation.DestinationPath);
         Assert.Contains("151.00", operation.DestinationPath);
@@ -58,12 +58,12 @@ public class PhotoOrganizerTests
     {
         // Arrange
         var fileSystem = Substitute.For<IFileSystem>();
-        
+
         // Mock file system path operations
         fileSystem.Path.GetFileName(Arg.Any<string>()).Returns(callInfo => System.IO.Path.GetFileName(callInfo.Arg<string>()));
-        fileSystem.Path.Combine(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(callInfo => 
+        fileSystem.Path.Combine(Arg.Any<string>(), Arg.Any<string>(), Arg.Any<string>()).Returns(callInfo =>
             System.IO.Path.Combine(callInfo.ArgAt<string>(0), callInfo.ArgAt<string>(1), callInfo.ArgAt<string>(2)));
-        
+
         var organizer = new PhotoOrganizer(fileSystem);
 
         var photos = new List<PhotoMetadata>
@@ -91,7 +91,7 @@ public class PhotoOrganizerTests
         // Assert
         Assert.Single(operations);
         var operation = operations[0];
-        
+
         // Should contain "Unknown" for missing location
         Assert.Contains("Unknown", operation.DestinationPath);
         Assert.Contains("2024", operation.DestinationPath);

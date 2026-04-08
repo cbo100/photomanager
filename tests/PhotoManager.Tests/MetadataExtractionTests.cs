@@ -26,7 +26,7 @@ public class MetadataExtractionTests
         // Assert
         Assert.NotNull(metadata);
         Assert.Equal(testImagePath, metadata.SourcePath);
-        
+
         // Output for debugging
         Console.WriteLine($"File: {metadata.FileName}");
         Console.WriteLine($"Date Taken: {metadata.DateTaken}");
@@ -50,13 +50,13 @@ public class MetadataExtractionTests
         }
 
         var imageFiles = Directory.GetFiles(testDir, "*.JPG").Take(5).ToList();
-        
+
         // Act & Assert
         foreach (var imagePath in imageFiles)
         {
             var metadata = await extractor.ExtractMetadataAsync(imagePath);
             Assert.NotNull(metadata);
-            
+
             Console.WriteLine($"\nFile: {Path.GetFileName(imagePath)}");
             Console.WriteLine($"  Date: {metadata.DateTaken?.ToString("yyyy-MM-dd HH:mm:ss") ?? "None"}");
             Console.WriteLine($"  GPS: {(metadata.Location != null ? $"{metadata.Location.Latitude:F6}, {metadata.Location.Longitude:F6}" : "None")}");

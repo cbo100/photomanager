@@ -1,5 +1,5 @@
-using System.IO.Compression;
 using System.IO.Abstractions;
+using System.IO.Compression;
 using PhotoManager.Domain;
 
 namespace PhotoManager.Core.Services;
@@ -128,9 +128,17 @@ public class GeoNamesGeocodingService : IGeocodingService
             var parts = line.Split('\t');
             if (parts.Length < 15) continue;
             if (!double.TryParse(parts[4], System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out var lat)) continue;
+                    System.Globalization.CultureInfo.InvariantCulture, out var lat))
+            {
+                continue;
+            }
+
             if (!double.TryParse(parts[5], System.Globalization.NumberStyles.Float,
-                    System.Globalization.CultureInfo.InvariantCulture, out var lon)) continue;
+                    System.Globalization.CultureInfo.InvariantCulture, out var lon))
+            {
+                continue;
+            }
+
             long.TryParse(parts[14], out var population);
 
             cities.Add(new CityEntry(parts[1], lat, lon, parts[8], population));
