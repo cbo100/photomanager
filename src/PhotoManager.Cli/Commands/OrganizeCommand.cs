@@ -52,7 +52,7 @@ public class OrganizeCommand : Command<OrganizeCommand.Settings>
 
         public override ValidationResult Validate()
         {
-            if (DestinationPath == null && Mode.ToLowerInvariant() != "move")
+            if (DestinationPath == null && !Mode.Equals("move", StringComparison.OrdinalIgnoreCase))
                 return ValidationResult.Error("A destination folder must be specified when using copy or symlink mode. Use --mode move for in-place organisation.");
 
             return ValidationResult.Success();

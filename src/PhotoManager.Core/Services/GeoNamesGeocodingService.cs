@@ -160,7 +160,7 @@ public class GeoNamesGeocodingService : IGeocodingService
         var entry = zip.GetEntry(ZipEntryName)
             ?? throw new InvalidOperationException($"Expected '{ZipEntryName}' in GeoNames zip.");
 
-        await using var entryStream = entry.Open();
+        await using var entryStream = await entry.OpenAsync(cancellationToken);
         await using var fileStream = _fileSystem.File.Create(_dataPath);
         await entryStream.CopyToAsync(fileStream, cancellationToken);
     }
