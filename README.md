@@ -147,4 +147,3 @@ photomanager/
 ## License
 
 MIT
-
