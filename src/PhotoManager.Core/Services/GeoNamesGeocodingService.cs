@@ -59,7 +59,7 @@ public class GeoNamesGeocodingService : IGeocodingService
         if (_cache.TryGetValue(cacheKey, out var cached))
             return cached;
 
-        var nearest = FindNearest(coordinates.Latitude, coordinates.Longitude);
+        var nearest = FindBestCity(coordinates.Latitude, coordinates.Longitude);
         if (nearest == null) return null;
 
         var result = $"{nearest.Name}, {nearest.CountryCode}";
@@ -67,14 +67,15 @@ public class GeoNamesGeocodingService : IGeocodingService
         return result;
     }
 
-    private CityEntry? FindNearest(double lat, double lon)
+    private CityEntry? FindBestCity(double lat, double lon)
     {
-        // Sort is by latitude; search a ±1° band (~110km) then find closest by haversine
-        const double bandDegrees = 1.0;
+        const double radiusKm = 15.0;
+        const double bandDegrees = 1.0; // ~110km pre-filter
+
         var latMin = lat - bandDegrees;
         var latMax = lat + bandDegrees;
 
-        // Binary search for the start of the band
+        // Binary search for the start of the latitude band
         int lo = 0, hi = _cities!.Count - 1;
         while (lo < hi)
         {
@@ -83,12 +84,17 @@ public class GeoNamesGeocodingService : IGeocodingService
             else hi = mid;
         }
 
+        CityEntry? bestWithinRadius = null;
         CityEntry? nearest = null;
         double minDist = double.MaxValue;
 
         for (var i = lo; i < _cities.Count && _cities[i].Latitude <= latMax; i++)
         {
             var dist = Haversine(lat, lon, _cities[i].Latitude, _cities[i].Longitude);
+
+            if (dist <= radiusKm && (bestWithinRadius == null || _cities[i].Population > bestWithinRadius.Population))
+                bestWithinRadius = _cities[i];
+
             if (dist < minDist)
             {
                 minDist = dist;
@@ -96,7 +102,7 @@ public class GeoNamesGeocodingService : IGeocodingService
             }
         }
 
-        return nearest;
+        return bestWithinRadius ?? nearest;
     }
 
     private static double Haversine(double lat1, double lon1, double lat2, double lon2)
@@ -120,13 +126,14 @@ public class GeoNamesGeocodingService : IGeocodingService
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
             var parts = line.Split('\t');
-            if (parts.Length < 9) continue;
+            if (parts.Length < 15) continue;
             if (!double.TryParse(parts[4], System.Globalization.NumberStyles.Float,
                     System.Globalization.CultureInfo.InvariantCulture, out var lat)) continue;
             if (!double.TryParse(parts[5], System.Globalization.NumberStyles.Float,
                     System.Globalization.CultureInfo.InvariantCulture, out var lon)) continue;
+            long.TryParse(parts[14], out var population);
 
-            cities.Add(new CityEntry(parts[1], lat, lon, parts[8]));
+            cities.Add(new CityEntry(parts[1], lat, lon, parts[8], population));
         }
 
         cities.Sort((a, b) => a.Latitude.CompareTo(b.Latitude));
@@ -150,5 +157,5 @@ public class GeoNamesGeocodingService : IGeocodingService
         await entryStream.CopyToAsync(fileStream, cancellationToken);
     }
 
-    private record CityEntry(string Name, double Latitude, double Longitude, string CountryCode);
+    private record CityEntry(string Name, double Latitude, double Longitude, string CountryCode, long Population);
 }
