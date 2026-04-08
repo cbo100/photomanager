@@ -5,7 +5,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Spectre.Console.Cli" />
+    <PackageReference Include="Spectre.Console" />
   </ItemGroup>
 
   <PropertyGroup>

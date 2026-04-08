@@ -1,21 +1,37 @@
-using System.IO.Abstractions;
 using PhotoManager.Cli.Commands;
-using PhotoManager.Core.Services;
-using Spectre.Console.Cli;
+using Spectre.Console;
 
-var app = new CommandApp();
-
-app.Configure(config =>
+if (args.Length == 0 || args[0] is "--help" or "-h" or "-?")
 {
-    config.SetApplicationName("photomanager");
+    PrintHelp();
+    return args.Length == 0 ? 1 : 0;
+}
 
-    config.AddCommand<ScanCommand>("scan")
-        .WithDescription("Scan a directory for photos and display metadata");
+using var cts = new CancellationTokenSource();
+Console.CancelKeyPress += (_, e) => { e.Cancel = true; cts.Cancel(); };
 
-    config.AddCommand<OrganizeCommand>("organize")
-        .WithAlias("organise")
-        .WithDescription("Organize photos from source to destination folder");
+return args[0].ToLowerInvariant() switch
+{
+    "scan" => await ScanCommand.RunAsync(args[1..], cts.Token),
+    "organize" or "organise" => await OrganizeCommand.RunAsync(args[1..], cts.Token),
+    _ => UnknownCommand(args[0]),
+};
 
-});
+static void PrintHelp()
+{
+    AnsiConsole.MarkupLine("[bold]photomanager[/] [grey]<command> [options][/]");
+    AnsiConsole.WriteLine();
+    AnsiConsole.MarkupLine("[underline]Commands:[/]");
+    AnsiConsole.MarkupLine("  [green]scan[/]                  Scan a directory for photos and display metadata");
+    AnsiConsole.MarkupLine("  [green]organize[/] (organise)   Organize photos from source to destination folder");
+    AnsiConsole.WriteLine();
+    AnsiConsole.MarkupLine("Run [green]photomanager <command> --help[/] for command-specific options.");
+}
 
-return app.Run(args);
+static int UnknownCommand(string name)
+{
+    AnsiConsole.MarkupLine($"[red]Unknown command:[/] {name}");
+    PrintHelp();
+    return 1;
+}
+

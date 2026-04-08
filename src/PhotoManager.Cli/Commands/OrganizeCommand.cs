@@ -1,70 +1,109 @@
-using System.ComponentModel;
 using System.IO.Abstractions;
+using PhotoManager.Cli.Parsing;
 using PhotoManager.Core.Services;
 using PhotoManager.Domain;
 using Spectre.Console;
-using Spectre.Console.Cli;
+using ValidationResult = PhotoManager.Cli.Parsing.ValidationResult;
 
 namespace PhotoManager.Cli.Commands;
 
-public class OrganizeCommand : Command<OrganizeCommand.Settings>
+public class OrganizeCommand
 {
-    public class Settings : CommandSettings
+    private static readonly IReadOnlySet<string> FlagNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
     {
-        [CommandArgument(0, "<source>")]
-        [Description("Source directory to scan")]
+        "dry-run", "skip-duplicates", "yes", "y", "overwrite",
+    };
+
+    public class Settings
+    {
         public required string SourcePath { get; init; }
-
-        [CommandArgument(1, "[destination]")]
-        [Description("Destination directory for organized photos (defaults to source for in-place organisation)")]
         public string? DestinationPath { get; init; }
-
-        [CommandOption("--pattern")]
-        [Description("Organization pattern")]
-        [DefaultValue("{Year}/{Month}")]
         public string Pattern { get; init; } = "{Year}/{Month}";
-
-        [CommandOption("--mode")]
-        [Description("Operation mode: copy, move, or symlink")]
-        [DefaultValue("copy")]
         public string Mode { get; init; } = "copy";
-
-        [CommandOption("--dry-run")]
-        [Description("Preview without executing")]
         public bool DryRun { get; init; }
-
-        [CommandOption("--skip-duplicates")]
-        [Description("Skip duplicate files")]
         public bool SkipDuplicates { get; init; }
-
-        [CommandOption("--extensions")]
-        [Description("File extensions to scan (comma-separated)")]
-        [DefaultValue(".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef")]
         public string Extensions { get; init; } = ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef";
-
-        [CommandOption("-y|--yes")]
-        [Description("Skip confirmation prompt and execute immediately")]
         public bool Yes { get; init; }
-
-        [CommandOption("--overwrite")]
-        [Description("Overwrite files that already exist at the destination")]
         public bool Overwrite { get; init; }
 
-        public override ValidationResult Validate()
+        public ValidationResult Validate()
         {
             if (DestinationPath == null && !Mode.Equals("move", StringComparison.OrdinalIgnoreCase))
                 return ValidationResult.Error("A destination folder must be specified when using copy or symlink mode. Use --mode move for in-place organisation.");
 
             return ValidationResult.Success();
         }
+
+        public static (Settings? Value, string? Error) TryParse(string[] args)
+        {
+            var parsed = ArgParser.Parse(args, FlagNames);
+
+            if (parsed.HelpRequested)
+                return (null, null);
+
+            if (parsed.Positionals.Count == 0)
+                return (null, "Missing required argument: <source>");
+
+            var settings = new Settings
+            {
+                SourcePath = parsed.Positionals[0],
+                DestinationPath = parsed.Positionals.Count > 1 ? parsed.Positionals[1] : null,
+                Pattern = parsed.GetOptionOrDefault("pattern", "{Year}/{Month}"),
+                Mode = parsed.GetOptionOrDefault("mode", "copy"),
+                DryRun = parsed.HasFlag("dry-run"),
+                SkipDuplicates = parsed.HasFlag("skip-duplicates"),
+                Extensions = parsed.GetOptionOrDefault("extensions", ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef"),
+                Yes = parsed.HasFlag("yes") || parsed.HasFlag("y"),
+                Overwrite = parsed.HasFlag("overwrite"),
+            };
+
+            var validation = settings.Validate();
+            return validation.Successful
+                ? (settings, null)
+                : (null, validation.ErrorMessage);
+        }
     }
 
-    protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
+    public static void PrintHelp()
     {
-        return ExecuteAsync(context, settings, cancellationToken).GetAwaiter().GetResult();
+        AnsiConsole.MarkupLine("[bold]photomanager organize[/] [grey]<source> [destination][/] [grey][options][/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[underline]Arguments:[/]");
+        AnsiConsole.MarkupLine("  [green]<source>[/]              Source directory to scan");
+        AnsiConsole.MarkupLine("  [green][destination][/]         Destination directory [grey](defaults to source for in-place organisation)[/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[underline]Options:[/]");
+        AnsiConsole.MarkupLine("  [green]--pattern[/]             Organisation pattern [grey](default: {Year}/{Month})[/]");
+        AnsiConsole.MarkupLine("  [green]--mode[/]                Operation mode: copy, move, or symlink [grey](default: copy)[/]");
+        AnsiConsole.MarkupLine("  [green]--extensions[/]          Comma-separated file extensions [grey](default: .jpg,.jpeg,.png,.heic,.raw,.cr2,.nef)[/]");
+        AnsiConsole.MarkupLine("  [green]--dry-run[/]             Preview without executing");
+        AnsiConsole.MarkupLine("  [green]--skip-duplicates[/]     Skip duplicate files");
+        AnsiConsole.MarkupLine("  [green]--overwrite[/]           Overwrite files that already exist at the destination");
+        AnsiConsole.MarkupLine("  [green]-y, --yes[/]             Skip confirmation prompt and execute immediately");
+        AnsiConsole.MarkupLine("  [green]-h, --help[/]            Show this help");
     }
 
-    private async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
+    public static async Task<int> RunAsync(string[] args, CancellationToken cancellationToken = default)
+    {
+        var (settings, error) = Settings.TryParse(args);
+
+        if (settings == null && error == null) // --help requested
+        {
+            PrintHelp();
+            return 0;
+        }
+
+        if (error != null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] {error}");
+            PrintHelp();
+            return 1;
+        }
+
+        return await new OrganizeCommand().ExecuteAsync(settings!, cancellationToken);
+    }
+
+    private async Task<int> ExecuteAsync(Settings settings, CancellationToken cancellationToken)
     {
         var fileSystem = new FileSystem();
         var metadataExtractor = new MetadataExtractorService(fileSystem);

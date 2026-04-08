@@ -1,32 +1,71 @@
-using System.ComponentModel;
 using System.IO.Abstractions;
+using PhotoManager.Cli.Parsing;
 using PhotoManager.Core.Services;
 using PhotoManager.Domain;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace PhotoManager.Cli.Commands;
 
-public class ScanCommand : Command<ScanCommand.Settings>
+public class ScanCommand
 {
-    public class Settings : CommandSettings
+    private static readonly IReadOnlySet<string> FlagNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    public class Settings
     {
-        [CommandArgument(0, "<source>")]
-        [Description("Source directory to scan")]
         public required string SourcePath { get; init; }
-
-        [CommandOption("--extensions")]
-        [Description("File extensions to scan (comma-separated)")]
-        [DefaultValue(".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef")]
         public string Extensions { get; init; } = ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef";
+
+        public static (Settings? Value, string? Error) TryParse(string[] args)
+        {
+            var parsed = ArgParser.Parse(args, FlagNames);
+
+            if (parsed.HelpRequested)
+                return (null, null);
+
+            if (parsed.Positionals.Count == 0)
+                return (null, "Missing required argument: <source>");
+
+            return (new Settings
+            {
+                SourcePath = parsed.Positionals[0],
+                Extensions = parsed.GetOptionOrDefault("extensions", ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef"),
+            }, null);
+        }
     }
 
-    protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
+    public static void PrintHelp()
     {
-        return ExecuteAsync(context, settings, cancellationToken).GetAwaiter().GetResult();
+        AnsiConsole.MarkupLine("[bold]photomanager scan[/] [grey]<source>[/] [grey][options][/]");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[underline]Arguments:[/]");
+        AnsiConsole.MarkupLine("  [green]<source>[/]              Directory to scan");
+        AnsiConsole.WriteLine();
+        AnsiConsole.MarkupLine("[underline]Options:[/]");
+        AnsiConsole.MarkupLine("  [green]--extensions[/]          Comma-separated file extensions [grey](default: .jpg,.jpeg,.png,.heic,.raw,.cr2,.nef)[/]");
+        AnsiConsole.MarkupLine("  [green]-h, --help[/]            Show this help");
     }
 
-    private async Task<int> ExecuteAsync(CommandContext context, Settings settings, CancellationToken cancellationToken)
+    public static async Task<int> RunAsync(string[] args, CancellationToken cancellationToken = default)
+    {
+        var (settings, error) = Settings.TryParse(args);
+
+        if (settings == null && error == null) // --help requested
+        {
+            PrintHelp();
+            return 0;
+        }
+
+        if (error != null)
+        {
+            AnsiConsole.MarkupLine($"[red]Error:[/] {error}");
+            PrintHelp();
+            return 1;
+        }
+
+        return await new ScanCommand().ExecuteAsync(settings!, cancellationToken);
+    }
+
+    private async Task<int> ExecuteAsync(Settings settings, CancellationToken cancellationToken)
     {
         var fileSystem = new FileSystem();
         var metadataExtractor = new MetadataExtractorService(fileSystem);
