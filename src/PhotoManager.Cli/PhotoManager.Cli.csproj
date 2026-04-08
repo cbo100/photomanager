@@ -5,13 +5,25 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Spectre.Console.Cli" Version="0.53.1" />
+    <PackageReference Include="Spectre.Console.Cli" Version="0.55.0" />
   </ItemGroup>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net10.0</TargetFramework>
     <InvariantGlobalization>false</InvariantGlobalization>
+
+    <!-- Package metadata (dotnet global tool) -->
+    <PackAsTool>true</PackAsTool>
+    <ToolCommandName>photomanager</ToolCommandName>
+    <Version>0.1.0</Version>
+    <Authors>Chris Ormerod</Authors>
+    <Description>CLI tool for organising photos by EXIF metadata</Description>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/cbo100/photomanager</RepositoryUrl>
+    <PackageTags>photos;exif;cli;organise</PackageTags>
+
+    <!-- AOT -->
     <PublishAot>false</PublishAot>
   </PropertyGroup>
 

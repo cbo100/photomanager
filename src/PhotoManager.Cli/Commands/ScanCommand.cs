@@ -21,7 +21,7 @@ public class ScanCommand : Command<ScanCommand.Settings>
         public string Extensions { get; init; } = ".jpg,.jpeg,.png,.heic,.raw,.cr2,.nef";
     }
 
-    public override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
+    protected override int Execute(CommandContext context, Settings settings, CancellationToken cancellationToken)
     {
         return ExecuteAsync(context, settings, cancellationToken).GetAwaiter().GetResult();
     }
