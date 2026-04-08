@@ -1,20 +1,27 @@
-# Photo Manager CLI/TUI
+# Photo Manager CLI
 
-A command-line photo organizer that automatically organizes your photos based on EXIF metadata, dates, and customizable patterns. Built with .NET 10 and optimized for performance.
+A command-line photo organiser that automatically organises your photos based on EXIF metadata, dates, GPS location, and customisable patterns. Built with .NET 10.
+
+[![CI](https://github.com/cbo100/photomanager/actions/workflows/ci.yml/badge.svg)](https://github.com/cbo100/photomanager/actions/workflows/ci.yml)
 
 ## Requirements
 
 - **.NET 10 SDK** or later
 - Linux, macOS, or Windows
 
-## Features (Phase 1 - MVP)
+## Features
 
-✅ **Scan source folder** recursively for image files  
-✅ **Extract EXIF metadata** (date taken, location, camera info)  
-✅ **Detect duplicates** via SHA256 hash comparison  
-✅ **Preview organization plan** (dry-run mode)  
-✅ **Execute organization** (copy/move/symlink files)  
-✅ **Progress visualization** with Spectre.Console  
+- **Scan** a source folder recursively for image files
+- **Extract EXIF metadata** — date taken, GPS location, camera info
+- **Reverse geocoding** — resolves GPS coordinates to city names offline using the GeoNames dataset (downloaded on first use to `~/.photomanager/`)
+- **Detect duplicates** via SHA256 hash comparison
+- **Organise** photos by copy, move, or symlink with customisable folder patterns
+- **In-place organisation** — omit the destination to organise a folder in place (move mode only)
+- **Skip existing files** by default; opt in to overwrite with `--overwrite`
+- **Empty folder cleanup** — automatically removes empty directories after a move
+- **Dry-run preview** — shows up to 10 planned operations before committing
+- **Headless/CI support** via `-y`/`--yes` to skip confirmation
+- **Progress visualisation** with Spectre.Console
 
 ## Quick Start
 
@@ -30,104 +37,114 @@ dotnet build
 dotnet test
 ```
 
-### Run Commands
+### Run
 
 ```bash
 # Scan a directory and show photo metadata
-dotnet run --project src/PhotoManager.Cli scan <source-directory>
+dotnet run --project src/PhotoManager.Cli -- scan <source>
 
-# Preview organization plan (dry-run)
-dotnet run --project src/PhotoManager.Cli preview <source> <destination> --pattern "{Year}/{Month}"
+# Preview organisation plan (no files changed)
+dotnet run --project src/PhotoManager.Cli -- organise <source> <destination> --dry-run
 
-# Organize photos (copy mode)
-dotnet run --project src/PhotoManager.Cli organize <source> <destination> --pattern "{Year}/{Month}"
+# Organise by year/month (copy mode)
+dotnet run --project src/PhotoManager.Cli -- organise <source> <destination>
 
-# Organize photos (move mode)
-dotnet run --project src/PhotoManager.Cli organize <source> <destination> --mode move
+# Organise in-place by move (no destination needed)
+dotnet run --project src/PhotoManager.Cli -- organise <source> --mode move
 
-# Dry-run with duplicate detection
-dotnet run --project src/PhotoManager.Cli organize <source> <destination> --dry-run --skip-duplicates
+# Organise by city name from GPS
+dotnet run --project src/PhotoManager.Cli -- organise <source> <destination> --pattern "{Location}/{Year}"
+
+# Skip confirmation (headless/CI)
+dotnet run --project src/PhotoManager.Cli -- organise <source> <destination> --yes
 ```
 
-## Available Commands
+## Commands
 
 ### `scan`
-Scans a directory for photos and displays metadata summary.
 
-**Usage:** `photomanager scan <source> [options]`
+Scans a directory for photos and displays a metadata summary.
 
-**Options:**
-- `--extensions` - File extensions to scan (default: .jpg,.jpeg,.png,.heic,.raw,.cr2,.nef)
+```
+photomanager scan <source> [options]
+```
 
-### `preview`
-Previews the organization plan without executing it.
+| Option | Default | Description |
+|---|---|---|
+| `--extensions` | `.jpg,.jpeg,.png,.heic,.raw,.cr2,.nef` | File extensions to scan |
 
-**Usage:** `photomanager preview <source> <destination> [options]`
+---
 
-**Options:**
-- `--pattern` - Organization pattern (default: {Year}/{Month})
-- `--extensions` - File extensions to scan
+### `organise` (alias: `organize`)
 
-### `organize`
-Organizes photos from source to destination folder.
+Organises photos from source to destination.
 
-**Usage:** `photomanager organize <source> <destination> [options]`
+```
+photomanager organise <source> [destination] [options]
+```
 
-**Options:**
-- `--pattern` - Organization pattern (default: {Year}/{Month})
-- `--mode` - Operation mode: copy, move, or symlink (default: copy)
-- `--dry-run` - Preview without executing
-- `--skip-duplicates` - Skip duplicate files
-- `--extensions` - File extensions to scan
+Destination is optional — omit it to organise in place (requires `--mode move`).
 
-## Organization Patterns
+| Option | Default | Description |
+|---|---|---|
+| `--pattern` | `{Year}/{Month}` | Folder pattern (see tokens below) |
+| `--mode` | `copy` | `copy`, `move`, or `symlink` |
+| `--dry-run` | | Preview without executing |
+| `--skip-duplicates` | | Skip files with duplicate SHA256 hash |
+| `--overwrite` | | Overwrite files already at destination |
+| `--extensions` | `.jpg,.jpeg,.png,.heic,.raw,.cr2,.nef` | File extensions to scan |
+| `-y`, `--yes` | | Skip confirmation prompt |
 
-Available tokens for the `--pattern` option:
-- `{Year}` - Four-digit year (e.g., 2024)
-- `{Month}` - Two-digit month (e.g., 01)
-- `{MonthName}` - Month name (e.g., January)
-- `{Day}` - Two-digit day (e.g., 15)
-- `{Location}` - GPS coordinates (future: location names)
-- `{Camera}` - Camera make
+## Organisation Patterns
+
+| Token | Example output | Description |
+|---|---|---|
+| `{Year}` | `2024` | Four-digit year |
+| `{Month}` | `06` | Two-digit month |
+| `{MonthName}` | `June` | Full month name |
+| `{Day}` | `15` | Two-digit day |
+| `{Location}` | `Sydney, AU` | City name from GPS (falls back to coordinates) |
+| `{Camera}` | `Apple` | Camera make from EXIF |
 
 **Examples:**
-- `{Year}/{Month}` → 2024/01/
-- `{Year}/{MonthName}` → 2024/January/
-- `{Year}/{Month}/{Day}` → 2024/01/15/
-- `{Camera}/{Year}` → Canon/2024/
+
+```
+{Year}/{Month}            → 2024/06/photo.jpg
+{Year}/{MonthName}        → 2024/June/photo.jpg
+{Year}/{Month}/{Day}      → 2024/06/15/photo.jpg
+{Location}/{Year}         → Sydney, AU/2024/photo.jpg
+{Camera}/{Year}/{Month}   → Apple/2024/06/photo.jpg
+```
+
+### Location resolution
+
+When `{Location}` is used, GPS coordinates are resolved to a city name using the [GeoNames cities500 dataset](https://www.geonames.org/). The dataset is downloaded once to `~/.photomanager/cities500.tsv` (~50 MB). No API key or internet connection is required after the first run.
+
+Resolution strategy: returns the **highest-population city within 15 km**; falls back to the nearest city if none is found within that radius. If no GPS data is present, falls back to `Unknown`.
 
 ## Project Structure
 
-```text
-PhotoManager/
+```
+photomanager/
 ├── src/
-│   ├── PhotoManager.Cli/          # CLI application
-│   ├── PhotoManager.Core/         # Business logic
-│   └── PhotoManager.Domain/       # Domain models
+│   ├── PhotoManager.Cli/       # CLI entry point and commands
+│   ├── PhotoManager.Core/      # Business logic and services
+│   └── PhotoManager.Domain/    # Domain models
 ├── tests/
-│   └── PhotoManager.Tests/        # Unit tests
-└── plans/
-    └── architecture-plan.md       # Architecture documentation
+│   └── PhotoManager.Tests/     # Unit tests
+└── .github/workflows/ci.yml    # CI: build, test, format check
 ```
 
 ## Technologies
 
-- **.NET 10.0** - Latest .NET release
-- **C# Latest** - Using latest C# language features
-- **Spectre.Console.Cli** - Modern CLI framework
-- **MetadataExtractor** - EXIF/IPTC/XMP metadata reading
-- **System.IO.Abstractions** - Testable file system operations
-- **xUnit + NSubstitute** - Testing
-
-## Coming Soon (Phase 2 & 3)
-
-- Interactive event tagging via TUI
-- Reverse geocoding for GPS coordinates
-- Smart event detection using date/time clustering
-- Undo capability via operation log
-- Watch mode for auto-organizing new files
-- Statistics and reports
+- **.NET 10** with C# latest features
+- **Spectre.Console.Cli** — CLI framework
+- **MetadataExtractor** — EXIF/IPTC/XMP metadata reading
+- **System.IO.Abstractions** — testable file system
+- **xUnit + NSubstitute** — testing
+- **Roslynator + AsyncFixer** — static analysis
 
 ## License
 
 MIT
+
