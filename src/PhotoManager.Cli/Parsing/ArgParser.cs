@@ -25,7 +25,7 @@ internal static class ArgParser
     }
 
     /// <summary>
-    /// 
+    /// Parse command-line arguments into positionals and options. Recognises --flag, --key value, --key=value, and short -f flags.
     /// </summary>
     /// <param name="args">Arguments after the command name has been stripped.</param>
     /// <param name="flagNames">Names of boolean flags (short or long, without dashes) that never take a value.</param>
